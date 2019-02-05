@@ -1,5 +1,6 @@
 import argparse
 import collections
+import csv
 try:
     from configparser import ConfigParser, NoOptionError
 except ImportError:
@@ -224,6 +225,17 @@ def read_strategy(strategy_file):
     return strategy
 
 
+def create_csv_with_licenses(output_file, licenses):
+    with open(output_file, 'w', newline='') as csvfile:
+        # TODO: Make this more dynamically
+        fieldnames= licenses[0].keys()
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        writer.writeheader()
+        for license in licenses:
+            writer.writerow(license)
+
+
 def parse_args(args):
     parser = argparse.ArgumentParser(
         description='Check license of packages and there dependencies.',
@@ -244,11 +256,19 @@ def parse_args(args):
         '-r', '--rfile', dest='requirement_txt_file',
         help='path/to/requirement.txt file', nargs='?',
         default='./requirements.txt')
+    parser.add_argument(
+        '-o', '--output-file', dest='output_file',
+        help='path/to/output.csv file', nargs='?',
+    )
     return parser.parse_args(args)
 
 
 def run(args):
     strategy = read_strategy(args.strategy_ini_file)
+    if args.output_file:
+        all_licenses = get_packages_info(args.requirement_txt_file)
+        create_csv_with_licenses(args.output_file, all_licenses)
+
     return process(args.requirement_txt_file, strategy, args.level)
 
 
